@@ -15,8 +15,12 @@ import sys
 SCRIPT_DIR = Path(__file__).parent
 WSDIST_DIR = SCRIPT_DIR / 'wsdist_beta-main'
 
-sys.path.insert(0, str(SCRIPT_DIR))
+# SCRIPT_DIR must take priority over WSDIST_DIR: wsdist_beta-main contains
+# stale copies of item_database.py / optimizer_ui.py that would otherwise
+# shadow the real modules (the stale item_database finds no items.lua and
+# loads 0 items, zeroing every item's base stats).
 sys.path.insert(0, str(WSDIST_DIR))
+sys.path.insert(0, str(SCRIPT_DIR))
 
 from models import (
     ItemBase, ItemInstance, Stats, Container, Slot, Job,

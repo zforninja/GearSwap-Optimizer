@@ -148,7 +148,14 @@ def to_wsdist_gear(item, augment_string: str = "") -> Dict[str, Any]:
         # Stats from the database and merge them into our working stats object
         # so that every downstream consumer (wsdist dict, beam-search scorer)
         # sees the full stat picture.
-        if getattr(item, 'has_path_augment', False) and getattr(item, 'rank', 0) > 0:
+        # Skip the DB merge when inventory_loader already resolved the path
+        # stats into item.augment_stats (path_stats_resolved=True) — total_stats
+        # already contains them, and merging again would double-count every
+        # augment stat (e.g. Tatenashi Haramaki +1 R15 Acc+30 becoming +60).
+        already_resolved = getattr(item, 'path_stats_resolved', False)
+        if (not already_resolved
+                and getattr(item, 'has_path_augment', False)
+                and getattr(item, 'rank', 0) > 0):
             path_letter = _extract_path_letter_from_item(item)
             item_base_id = getattr(base, 'id', None)
             if path_letter and item_base_id is not None:

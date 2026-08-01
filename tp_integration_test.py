@@ -28,8 +28,12 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 WSDIST_DIR = SCRIPT_DIR / 'wsdist_beta-main'
 
-sys.path.insert(0, str(SCRIPT_DIR))
+# SCRIPT_DIR must take priority over WSDIST_DIR: wsdist_beta-main contains
+# stale copies of item_database.py / optimizer_ui.py that would otherwise
+# shadow the real modules (the stale item_database finds no items.lua and
+# loads 0 items, zeroing every item's base stats).
 sys.path.insert(0, str(WSDIST_DIR))
+sys.path.insert(0, str(SCRIPT_DIR))
 
 # =============================================================================
 # IMPORTS
@@ -256,7 +260,12 @@ def simulate_tp_set(
         buffs = {}
     if abilities is None:
         abilities = {}
-    
+
+    # Strip metadata fields (e.g. '_augments' list) that wsdist's
+    # create_player would otherwise try to sum as numeric stats.
+    from optimizer_ui import strip_gear_metadata
+    gearset = {slot: strip_gear_metadata(g) for slot, g in gearset.items()}
+
     # Create player with the gearset
     player = create_player(
         main_job=player_job,

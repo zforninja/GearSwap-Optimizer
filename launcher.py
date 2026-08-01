@@ -244,6 +244,12 @@ def main():
     # Import and run uvicorn
     try:
         import uvicorn
+        # Pre-import the root-level optimizer_ui BEFORE api.py runs.
+        # api.py prepends wsdist_beta-main to sys.path, whose own
+        # optimizer_ui.py would otherwise shadow the root module in
+        # frozen (PyInstaller) builds and break the import of
+        # get_ranged_weapons_from_inventory etc.
+        import optimizer_ui  # noqa: F401
         from api import app
         
         # Create server config - disable logging entirely in windowed mode

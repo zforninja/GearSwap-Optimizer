@@ -243,6 +243,21 @@ class ExtdataDecoder:
     # This is a simplified heuristic - can be expanded
     ODYSSEY_ARMOR_IDS = set(range(23761, 23790))  # Nyame set and similar
     RMEA_WEAPON_IDS = {20890}  # Anguta, etc. - needs expansion
+    # Unity Concord (Wanted battle) +1 gear - rank 1-15, Path A only.
+    # Generated from augment_data/build_unity_augments.py (BG-Wiki data);
+    # checked BEFORE the generic ID-range heuristics because several Unity
+    # IDs fall inside the RMEA/Odyssey/Ambuscade ranges below.
+    UNITY_ITEM_IDS = {
+        10769, 10771, 20508, 20522, 20528, 20581, 20604, 20607, 20609, 20612, 20614, 20680,
+        20682, 20697, 20709, 20800, 20805, 20807, 20852, 20854, 20899, 20943, 20981, 20988,
+        21030, 21035, 21076, 21091, 21100, 21160, 21163, 21165, 21220, 21223, 21344, 21350,
+        21417, 21419, 21484, 21689, 21691, 21696, 21703, 21749, 21806, 22058, 22121, 22255,
+        22267, 25602, 25636, 25681, 25710, 25733, 25856, 25924, 26002, 26022, 26402, 26710,
+        26715, 26732, 26785, 26787, 26869, 26871, 26873, 26888, 26897, 26943, 27051, 27107,
+        27109, 27149, 27151, 27231, 27408, 27410, 27505, 27509, 27518, 27533, 27543, 27549,
+        27559, 27561, 27563, 27602, 27610, 27620, 27637, 27639, 27641, 27994, 27996, 28135,
+        28137, 28274, 28276, 28353, 28413, 28424, 28428, 28430, 28482, 28485, 28487, 28491,
+    }
     
     def __init__(self, augment_db: Optional[AugmentDatabase] = None,
                  path_rank_db: Optional[PathRankAugmentDatabase] = None):
@@ -367,6 +382,11 @@ class ExtdataDecoder:
                 return meta.get('item_type', 'unknown'), meta.get('max_rank', 15)
         
         # Fallback heuristics based on known ID ranges
+        # Unity Concord (Wanted battle) +1 gear - must be checked first,
+        # several Unity IDs overlap the generic ranges below.
+        if item_id in self.UNITY_ITEM_IDS:
+            return 'unity', 15
+        
         # Odyssey armor (Nyame, Sakpata, Gleti, Mpaca, Agwu, etc.)
         if item_id in self.ODYSSEY_ARMOR_IDS or 23700 <= item_id <= 23900:
             return 'odyssey', 30

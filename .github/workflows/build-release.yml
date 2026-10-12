@@ -1,0 +1,71 @@
+name: Build and Release
+
+# Builds the FFXI Gear Set Optimizer Windows executable (equivalent of
+# build.bat) on a Windows runner and attaches it to a GitHub Release.
+#
+# Trigger: push a tag starting with "v" (e.g. v1.0.0-unity), or run
+# manually from the Actions tab. Manual runs always upload an artifact;
+# if you fill in "release_tag" they also attach the zip to that release
+# (creating it if it does not exist yet).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing/new release tag to attach the zip to (leave blank for artifact only)'
+        required: false
+        default: 'v1.1.0-unity'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable (pyinstaller gso.spec)
+        run: pyinstaller gso.spec
+
+      - name: Package dist folder
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/FFXI_Gear_Optimizer -DestinationPath FFXI_Gear_Optimizer_Windows.zip
+          Get-Item FFXI_Gear_Optimizer_Windows.zip | Select-Object Name, Length
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FFXI_Gear_Optimizer_Windows
+          path: FFXI_Gear_Optimizer_Windows.zip
+
+      - name: Create GitHub Release (tag push)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: FFXI_Gear_Optimizer_Windows.zip
+          generate_release_notes: true
+
+      - name: Attach zip to release (manual run)
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          files: FFXI_Gear_Optimizer_Windows.zip
